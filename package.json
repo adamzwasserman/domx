@@ -1,0 +1,46 @@
+{
+  "name": "domx",
+  "version": "0.1.0",
+  "description": "DOM state observer for DATAOS — collect, apply, observe, and persist DOM state",
+  "main": "dist/domx.js",
+  "module": "dist/domx.esm.js",
+  "types": "dist/domx.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/domx.esm.js",
+      "require": "./dist/domx.js",
+      "types": "./dist/domx.d.ts"
+    },
+    "./htmx": {
+      "import": "./dist/domx-htmx.esm.js",
+      "require": "./dist/domx-htmx.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm run build && npm test",
+    "size": "size-limit"
+  },
+  "keywords": ["dom", "state", "dataos", "htmx", "observer", "mutation", "hypermedia"],
+  "author": "Adam Wasserman <adamzwasserman>",
+  "license": "MIT",
+  "homepage": "https://domx.software",
+  "repository": "https://github.com/adamzwasserman/domx",
+  "devDependencies": {
+    "jsdom": "^23.0.0",
+    "vitest": "^1.0.0",
+    "@size-limit/preset-small-lib": "^11.0.0",
+    "size-limit": "^11.0.0"
+  },
+  "size-limit": [
+    {
+      "path": "dist/domx.js",
+      "limit": "1 KB"
+    }
+  ]
+}
