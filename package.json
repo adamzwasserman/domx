@@ -32,6 +32,7 @@
   "homepage": "https://domx.software",
   "repository": "https://github.com/adamzwasserman/domx",
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "jsdom": "^23.0.0",
     "vitest": "^1.0.0",
     "@size-limit/preset-small-lib": "^11.0.0",

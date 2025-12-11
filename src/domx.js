@@ -149,11 +149,11 @@ function ensureObserver() {
     }
   });
 
-  // PERFORMANCE: Observe only document.body without subtree for better performance
-  // Most DOM changes happen on or near form elements
+  // PERFORMANCE: subtree: true is necessary for observing deeply nested elements
+  // but has performance cost. Most apps have shallow DOM structures anyway.
   sharedObserver.observe(document.body, {
     childList: true,
-    subtree: false, // Changed from true to false for performance
+    subtree: true,
     attributes: true,
     characterData: true
   });

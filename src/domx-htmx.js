@@ -27,21 +27,34 @@ import { collect, apply, observe, send, replay, clearCache } from './domx.js';
  *
  * SECURITY: Ensure dx-manifest attributes are server-rendered, not user-settable,
  * to prevent JSON injection or unintended window property access.
+ *
+ * PERFORMANCE: Cache parsed manifests to avoid re-parsing on every access
  */
+const manifestCache = new Map();
+
 function parseManifest(value) {
   if (!value) return null;
 
+  // PERFORMANCE: Check cache first
+  if (manifestCache.has(value)) {
+    return manifestCache.get(value);
+  }
+
+  let manifest = null;
+
   // Try JSON first
   try {
-    return JSON.parse(value);
+    manifest = JSON.parse(value);
   } catch (e) {
     // Try as variable name
     if (typeof window !== 'undefined' && window[value]) {
-      return window[value];
+      manifest = window[value];
     }
   }
 
-  return null;
+  // Cache the result
+  manifestCache.set(value, manifest);
+  return manifest;
 }
 
 /**
