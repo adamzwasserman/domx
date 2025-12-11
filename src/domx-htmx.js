@@ -24,6 +24,9 @@ import { collect, apply, observe, send, replay, clearCache } from './domx.js';
  * - Otherwise, treat as variable name and look up on window
  * @param {string} value - Attribute value
  * @returns {Object|null} Manifest object or null
+ *
+ * SECURITY: Ensure dx-manifest attributes are server-rendered, not user-settable,
+ * to prevent JSON injection or unintended window property access.
  */
 function parseManifest(value) {
   if (!value) return null;
@@ -119,6 +122,7 @@ const domxExtension = {
         Object.assign(evt.detail.parameters, state);
 
         // Cache if enabled
+        // SECURITY: This stores state in localStorage, accessible to any script on the domain
         if (isCacheEnabled(el)) {
           const url = evt.detail.path;
           try {

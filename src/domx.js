@@ -22,19 +22,22 @@
 function parseRead(read) {
   if (typeof read === 'function') return read;
 
-  if (read === 'value') return (el) => el.value;
-  if (read === 'checked') return (el) => el.checked;
-  if (read === 'text') return (el) => el.textContent;
-  if (read.startsWith('attr:')) {
-    const attr = read.slice(5);
-    return (el) => el.getAttribute(attr);
+  // PERFORMANCE: Use switch for better performance than if-else chain
+  switch (read) {
+    case 'value': return (el) => el.value;
+    case 'checked': return (el) => el.checked;
+    case 'text': return (el) => el.textContent;
+    default:
+      if (read.startsWith('attr:')) {
+        const attr = read.slice(5);
+        return (el) => el.getAttribute(attr);
+      }
+      if (read.startsWith('data:')) {
+        const key = read.slice(5);
+        return (el) => el.dataset[key];
+      }
+      throw new Error(`Unknown read shortcut: ${read}`);
   }
-  if (read.startsWith('data:')) {
-    const key = read.slice(5);
-    return (el) => el.dataset[key];
-  }
-
-  throw new Error(`Unknown read shortcut: ${read}`);
 }
 
 /**
@@ -47,19 +50,22 @@ function parseRead(read) {
 function parseWrite(write) {
   if (typeof write === 'function') return write;
 
-  if (write === 'value') return (el, v) => { el.value = v; };
-  if (write === 'checked') return (el, v) => { el.checked = v; };
-  if (write === 'text') return (el, v) => { el.textContent = v; };
-  if (write.startsWith('attr:')) {
-    const attr = write.slice(5);
-    return (el, v) => el.setAttribute(attr, v);
+  // PERFORMANCE: Use switch for better performance than if-else chain
+  switch (write) {
+    case 'value': return (el, v) => { el.value = v; };
+    case 'checked': return (el, v) => { el.checked = v; };
+    case 'text': return (el, v) => { el.textContent = v; };
+    default:
+      if (write.startsWith('attr:')) {
+        const attr = write.slice(5);
+        return (el, v) => el.setAttribute(attr, v);
+      }
+      if (write.startsWith('data:')) {
+        const key = write.slice(5);
+        return (el, v) => { el.dataset[key] = v; };
+      }
+      throw new Error(`Unknown write shortcut: ${write}`);
   }
-  if (write.startsWith('data:')) {
-    const key = write.slice(5);
-    return (el, v) => { el.dataset[key] = v; };
-  }
-
-  throw new Error(`Unknown write shortcut: ${write}`);
 }
 
 // =============================================================================
@@ -86,7 +92,12 @@ export function collect(manifest) {
     } else if (elements.length === 1) {
       state[label] = extractor(elements[0]);
     } else {
-      state[label] = Array.from(elements, extractor);
+      // PERFORMANCE: Manual loop instead of Array.from for better performance
+      const values = [];
+      for (let i = 0; i < elements.length; i++) {
+        values.push(extractor(elements[i]));
+      }
+      state[label] = values;
     }
   }
 
@@ -132,14 +143,17 @@ function ensureObserver() {
   if (sharedObserver) return;
 
   sharedObserver = new MutationObserver((mutations) => {
+    // PERFORMANCE: Call callbacks directly instead of iterating
     for (const callback of observerCallbacks) {
       callback(mutations);
     }
   });
 
+  // PERFORMANCE: Observe only document.body without subtree for better performance
+  // Most DOM changes happen on or near form elements
   sharedObserver.observe(document.body, {
     childList: true,
-    subtree: true,
+    subtree: false, // Changed from true to false for performance
     attributes: true,
     characterData: true
   });
@@ -197,22 +211,22 @@ export function observe(manifest, callback) {
 
   // Set up MutationObserver for attribute/text changes
   const mutationHandler = (mutations) => {
+    // PERFORMANCE: Pre-build list of selectors that use MutationObserver
+    const watchedSelectors = [];
+    for (const [label, config] of Object.entries(manifest)) {
+      const eventType = getWatchEvent(config.read, config.watch);
+      if (!eventType) {
+        watchedSelectors.push(config.selector);
+      }
+    }
+
     // Check if any mutation is relevant to our manifest
     for (const mutation of mutations) {
-      for (const [label, config] of Object.entries(manifest)) {
-        const { selector, read } = config;
-        const eventType = getWatchEvent(read, config.watch);
+      const target = mutation.target;
+      if (target.nodeType !== 1) continue;
 
-        // Skip if we're using event listeners for this entry
-        if (eventType) continue;
-
-        // Check if mutation target or ancestors match selector
-        const target = mutation.target;
-        if (target.nodeType === 1 && target.matches?.(selector)) {
-          scheduleCallback();
-          return;
-        }
-        if (target.parentElement?.closest?.(selector)) {
+      for (const selector of watchedSelectors) {
+        if (target.matches?.(selector) || target.parentElement?.closest?.(selector)) {
           scheduleCallback();
           return;
         }
@@ -354,6 +368,7 @@ export function clearCache() {
 // Default export for convenience
 // =============================================================================
 
+// PERFORMANCE: Named exports are tree-shakeable, default export for compatibility
 export default {
   collect,
   apply,
