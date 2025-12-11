@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - domx</title>
+  <meta name="description" content="domx documentation. Learn how to use collect, apply, observe, and more.">
+  <link rel="canonical" href="https://domx.software/docs.html">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">dom<span class="x">x</span></a>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/docs.html" class="active">Docs</a>
+        <a href="https://github.com/adamzwasserman/domx">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="docs">
+      <nav class="docs__nav">
+        <p class="docs__nav-title">Getting Started</p>
+        <ul class="docs__nav-list">
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#manifest">The Manifest</a></li>
+        </ul>
+        <p class="docs__nav-title" style="margin-top: var(--spacing-md);">API Reference</p>
+        <ul class="docs__nav-list">
+          <li><a href="#collect">collect()</a></li>
+          <li><a href="#apply">apply()</a></li>
+          <li><a href="#observe">observe()</a></li>
+          <li><a href="#on">on()</a></li>
+          <li><a href="#send">send()</a></li>
+          <li><a href="#replay">replay()</a></li>
+          <li><a href="#clearCache">clearCache()</a></li>
+        </ul>
+        <p class="docs__nav-title" style="margin-top: var(--spacing-md);">htmx Integration</p>
+        <ul class="docs__nav-list">
+          <li><a href="#htmx-setup">Setup</a></li>
+          <li><a href="#htmx-attributes">Attributes</a></li>
+          <li><a href="#htmx-events">Events</a></li>
+        </ul>
+      </nav>
+
+      <div class="docs__content">
+        <h2 id="installation">Installation</h2>
+        <p>Install via npm:</p>
+        <div class="code-example">
+          <pre><code>npm install domx</code></pre>
+        </div>
+        <p>Or use via CDN:</p>
+        <div class="code-example">
+          <pre><code>&lt;script src="https://unpkg.com/domx"&gt;&lt;/script&gt;</code></pre>
+        </div>
+        <p>For htmx integration:</p>
+        <div class="code-example">
+          <pre><code>&lt;script src="https://unpkg.com/domx/dist/domx-htmx.min.js"&gt;&lt;/script&gt;</code></pre>
+        </div>
+
+        <h2 id="quick-start">Quick Start</h2>
+        <p>Import the functions you need:</p>
+        <div class="code-example">
+          <pre><code>import { collect, apply, observe } from 'domx';
+
+// Define a manifest
+const manifest = {
+  username: { selector: '#username', read: 'value', write: 'value' },
+  rememberMe: { selector: '#remember', read: 'checked', write: 'checked' }
+};
+
+// Collect state from DOM
+const state = collect(manifest);
+// { username: "alice", rememberMe: true }
+
+// Apply state to DOM
+apply(manifest, { username: "bob" });
+
+// Observe changes
+const unsubscribe = observe(manifest, (state) => {
+  console.log('State changed:', state);
+});
+
+// Stop observing
+unsubscribe();</code></pre>
+        </div>
+
+        <h2 id="manifest">The Manifest</h2>
+        <p>The manifest is an object that maps state labels to DOM locations. Each entry specifies:</p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li><code>selector</code> - CSS selector to find element(s)</li>
+          <li><code>read</code> - How to extract value from element</li>
+          <li><code>write</code> - How to set value on element (optional)</li>
+          <li><code>watch</code> - Override auto-detected watch event (optional)</li>
+        </ul>
+
+        <h3>Read/Write Shortcuts</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--color-border);">
+              <th style="text-align: left; padding: 0.5rem;">Shortcut</th>
+              <th style="text-align: left; padding: 0.5rem;">Read</th>
+              <th style="text-align: left; padding: 0.5rem;">Write</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>"value"</code></td>
+              <td style="padding: 0.5rem;"><code>el.value</code></td>
+              <td style="padding: 0.5rem;"><code>el.value = x</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>"checked"</code></td>
+              <td style="padding: 0.5rem;"><code>el.checked</code></td>
+              <td style="padding: 0.5rem;"><code>el.checked = x</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>"text"</code></td>
+              <td style="padding: 0.5rem;"><code>el.textContent</code></td>
+              <td style="padding: 0.5rem;"><code>el.textContent = x</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>"attr:name"</code></td>
+              <td style="padding: 0.5rem;"><code>el.getAttribute('name')</code></td>
+              <td style="padding: 0.5rem;"><code>el.setAttribute('name', x)</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>"data:name"</code></td>
+              <td style="padding: 0.5rem;"><code>el.dataset.name</code></td>
+              <td style="padding: 0.5rem;"><code>el.dataset.name = x</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;">Function</td>
+              <td style="padding: 0.5rem;">Custom extractor</td>
+              <td style="padding: 0.5rem;">Custom writer</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Custom Functions</h3>
+        <div class="code-example">
+          <pre><code>const manifest = {
+  combined: {
+    selector: '#thing',
+    read: (el) => `${el.dataset.foo}-${el.dataset.bar}`,
+    write: (el, val) => {
+      const [foo, bar] = val.split('-');
+      el.dataset.foo = foo;
+      el.dataset.bar = bar;
+    }
+  }
+};</code></pre>
+        </div>
+
+        <h2 id="collect">collect(manifest)</h2>
+        <p>Reads current DOM state based on manifest. Returns object with labels as keys.</p>
+        <div class="code-example">
+          <pre><code>const state = collect(manifest);
+// { searchQuery: "hello", sortDir: "asc" }</code></pre>
+        </div>
+        <p><strong>Multiple elements:</strong> When selector matches multiple elements, returns an array:</p>
+        <div class="code-example">
+          <pre><code>const manifest = {
+  tags: { selector: '.tag', read: 'text' }
+};
+collect(manifest);
+// { tags: ["JavaScript", "TypeScript", "Python"] }</code></pre>
+        </div>
+
+        <h2 id="apply">apply(manifest, state)</h2>
+        <p>Writes state values to DOM. Only processes entries with <code>write</code> key.</p>
+        <div class="code-example">
+          <pre><code>apply(manifest, { username: "alice", theme: "dark" });</code></pre>
+        </div>
+
+        <h2 id="observe">observe(manifest, callback)</h2>
+        <p>Watches DOM for changes and calls callback with full state. Auto-detects watch mechanism from read type. Returns unsubscribe function.</p>
+        <div class="code-example">
+          <pre><code>const unsubscribe = observe(manifest, (state) => {
+  console.log('State changed:', state);
+});
+
+// Later: stop observing
+unsubscribe();</code></pre>
+        </div>
+        <p><strong>Auto-detection:</strong></p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li><code>"value"</code> → listens to <code>input</code> event</li>
+          <li><code>"checked"</code> → listens to <code>change</code> event</li>
+          <li><code>"attr:*"</code>, <code>"data:*"</code>, <code>"text"</code> → uses MutationObserver</li>
+        </ul>
+
+        <h2 id="on">on(callback)</h2>
+        <p>Low-level subscription to raw MutationRecords. For framework integration.</p>
+        <div class="code-example">
+          <pre><code>const unsubscribe = on((mutations) => {
+  // Process raw MutationRecords
+});</code></pre>
+        </div>
+
+        <h2 id="send">send(url, manifest, opts?)</h2>
+        <p>Collects state, caches to localStorage, and sends via fetch.</p>
+        <div class="code-example">
+          <pre><code>const response = await send('/api/save', manifest, {
+  headers: { 'X-Custom': 'value' }
+});</code></pre>
+        </div>
+        <p class="text-muted" style="font-size: 0.875rem;"><strong>Security:</strong> Cached state in localStorage is accessible to any script on the same domain. Avoid including sensitive data in manifests.</p>
+
+        <h2 id="replay">replay()</h2>
+        <p>Re-sends cached request (for page refresh recovery). Returns null if no valid cache or cache expired (5 minutes).</p>
+        <div class="code-example">
+          <pre><code>// On page load
+const response = await replay();
+if (response?.ok) {
+  const html = await response.text();
+  container.innerHTML = html;
+}</code></pre>
+        </div>
+
+        <h2 id="clearCache">clearCache()</h2>
+        <p>Clears the cached request from localStorage.</p>
+        <div class="code-example">
+          <pre><code>clearCache();</code></pre>
+        </div>
+
+        <h2 id="htmx-setup">htmx Integration - Setup</h2>
+        <p>Include the htmx extension after htmx:</p>
+        <div class="code-example">
+          <pre><code>&lt;script src="https://unpkg.com/htmx.org"&gt;&lt;/script&gt;
+&lt;script src="https://unpkg.com/domx/dist/domx-htmx.min.js"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+const manifest = {
+  searchQuery: { selector: '#search', read: 'value' },
+  sortDir: { selector: '[data-sort]', read: 'attr:data-sort-dir' }
+};
+&lt;/script&gt;
+
+&lt;body hx-ext="domx" dx-manifest="manifest"&gt;
+  ...
+&lt;/body&gt;</code></pre>
+        </div>
+
+        <h2 id="htmx-attributes">htmx Attributes</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--color-border);">
+              <th style="text-align: left; padding: 0.5rem;">Attribute</th>
+              <th style="text-align: left; padding: 0.5rem;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>dx-manifest</code></td>
+              <td style="padding: 0.5rem;">Manifest object name or inline JSON</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>dx-cache</code></td>
+              <td style="padding: 0.5rem;">Enable localStorage caching ("true"/"false")</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-muted" style="font-size: 0.875rem;"><strong>Security:</strong> <code>dx-manifest</code> attributes should be server-rendered, not user-settable, to prevent code injection.</p>
+
+        <h2 id="htmx-events">htmx Events</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--color-border);">
+              <th style="text-align: left; padding: 0.5rem;">Event</th>
+              <th style="text-align: left; padding: 0.5rem;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.5rem;"><code>dx:change</code></td>
+              <td style="padding: 0.5rem;">Fired when any observed state changes. Use with <code>hx-trigger="dx:change"</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem;"><code>dx:replayed</code></td>
+              <td style="padding: 0.5rem;">Fired on document.body after successful replay on page load</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-example">
+          <pre><code>&lt;!-- Auto-search when state changes --&gt;
+&lt;div hx-post="/api/search"
+     hx-trigger="dx:change"
+     hx-target="#results"&gt;
+  &lt;input id="search" type="text"&gt;
+  &lt;div id="results"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">domx is open source. MIT License.</p>
+    </div>
+  </footer>
+</body>
+</html>

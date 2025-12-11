@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>domx - DOM State Observer for DATAOS | Collect, Apply, Observe</title>
+  <meta name="description" content="domx is a tiny (<1KB) library for treating the DOM as the single source of truth. Collect state from DOM, apply state to DOM, observe changes. Zero dependencies.">
+
+  <!-- SEO Meta Tags -->
+  <meta name="keywords" content="DOM state, JavaScript library, state management, DATAOS, htmx, MutationObserver, declarative, hypermedia, no dependencies">
+  <meta name="author" content="Adam Zachary Wasserman">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://domx.software/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://domx.software/">
+  <meta property="og:title" content="domx - DOM State Observer for DATAOS">
+  <meta property="og:description" content="Tiny (<1KB) library for treating the DOM as the single source of truth. Collect, apply, observe state. Zero dependencies.">
+  <meta property="og:site_name" content="domx">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://domx.software/">
+  <meta name="twitter:title" content="domx - DOM State Observer for DATAOS">
+  <meta name="twitter:description" content="Tiny (<1KB) library for treating the DOM as the single source of truth. Collect, apply, observe state.">
+  <meta name="twitter:creator" content="@adamzwasserman">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "domx",
+    "description": "DOM state observer for DATAOS — collect, apply, observe, and persist DOM state",
+    "url": "https://domx.software",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Adam Zachary Wasserman",
+      "url": "https://github.com/adamzwasserman"
+    },
+    "license": "https://opensource.org/licenses/MIT",
+    "programmingLanguage": "JavaScript",
+    "softwareVersion": "0.1.0",
+    "featureList": [
+      "Collect state from DOM via manifest",
+      "Apply state to DOM",
+      "Observe DOM changes",
+      "htmx integration",
+      "Page refresh recovery",
+      "Single MutationObserver"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">dom<span class="x">x</span></a>
+      <nav class="nav">
+        <a href="/" class="active">Home</a>
+        <a href="/docs.html">Docs</a>
+        <a href="https://github.com/adamzwasserman/domx">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="hero__tagline">DOM As The Authority On State</p>
+        <h1 class="hero__title">dom<span class="x">x</span></h1>
+        <p class="hero__subtitle">
+          Stop syncing JavaScript state with DOM state.<br>
+          Read from the DOM when you need it. Write to the DOM when it changes.<br>
+          No Redux. No MobX. No useState. Just the DOM.
+        </p>
+        <div class="btn-group">
+          <a href="/docs.html" class="btn btn--primary">Get Started</a>
+          <a href="https://github.com/adamzwasserman/domx" class="btn">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat__value">&lt;1KB</div>
+            <div class="stat__label">Gzipped</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">7</div>
+            <div class="stat__label">Functions</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">1</div>
+            <div class="stat__label">Observer</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">0</div>
+            <div class="stat__label">Dependencies</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="text-center mb-lg">The DATAOS Way</h2>
+        <p class="text-center text-muted mb-lg" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+          Define a manifest that maps state labels to DOM selectors.
+          domx reads and writes state through that manifest.
+          The DOM is always the source of truth.
+        </p>
+
+        <div class="showcase mb-lg">
+          <div class="showcase__content">
+            <h3>Define Your Manifest</h3>
+            <p class="text-muted">Map state labels to DOM locations</p>
+            <div class="code-example">
+              <pre><code>const manifest = {
+  searchQuery: { selector: '#search', read: 'value', write: 'value' },
+  sortDir: { selector: '[data-sort]', read: 'attr:data-sort-dir' },
+  filters: { selector: '.filter.active', read: 'data:filter' }
+};</code></pre>
+            </div>
+          </div>
+          <div class="showcase__visual">
+            <h3>Use Pure Functions</h3>
+            <p class="text-muted">Collect, apply, observe</p>
+            <div class="code-example">
+              <pre><code>// Read state from DOM
+const state = domx.collect(manifest);
+// { searchQuery: "hello", sortDir: "asc", filters: ["active"] }
+
+// Write state to DOM
+domx.apply(manifest, { searchQuery: "world" });
+
+// Watch for changes
+domx.observe(manifest, (state) => {
+  console.log('State changed:', state);
+});</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--white">
+      <div class="container">
+        <h2 class="text-center mb-lg">Seven Pure Functions</h2>
+        <div class="modules">
+          <div class="module">
+            <div class="module__name">collect()</div>
+            <p class="module__desc">Read state from DOM based on manifest</p>
+          </div>
+          <div class="module">
+            <div class="module__name">apply()</div>
+            <p class="module__desc">Write state to DOM based on manifest</p>
+          </div>
+          <div class="module">
+            <div class="module__name">observe()</div>
+            <p class="module__desc">Watch DOM for state changes</p>
+          </div>
+          <div class="module">
+            <div class="module__name">on()</div>
+            <p class="module__desc">Low-level mutation subscription</p>
+          </div>
+          <div class="module">
+            <div class="module__name">send()</div>
+            <p class="module__desc">Fetch with state caching</p>
+          </div>
+          <div class="module">
+            <div class="module__name">replay()</div>
+            <p class="module__desc">Restore state on page refresh</p>
+          </div>
+          <div class="module">
+            <div class="module__name">clearCache()</div>
+            <p class="module__desc">Clear cached request</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="text-center mb-lg">Why domx?</h2>
+        <div class="features">
+          <div class="feature">
+            <div class="feature__prefix">Simple</div>
+            <h3 class="feature__title">Pure Functions</h3>
+            <p class="feature__desc">No classes, no instances, no <code>this</code>. Just functions that do one thing.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Declarative</div>
+            <h3 class="feature__title">Manifest Pattern</h3>
+            <p class="feature__desc">Define state-to-DOM mapping once. Read and write through the manifest.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Tiny</div>
+            <h3 class="feature__title">&lt;1KB Gzipped</h3>
+            <p class="feature__desc">Smaller than a tweet. Zero dependencies. Ships in milliseconds.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Efficient</div>
+            <h3 class="feature__title">Single Observer</h3>
+            <p class="feature__desc">One MutationObserver for all state watching. Batched callbacks via rAF.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Resilient</div>
+            <h3 class="feature__title">Page Refresh Recovery</h3>
+            <p class="feature__desc">Cache state before requests. Replay on refresh. Never lose user work.</p>
+          </div>
+          <div class="feature">
+            <div class="feature__prefix">Compatible</div>
+            <h3 class="feature__title">htmx Integration</h3>
+            <p class="feature__desc">First-class htmx extension. Auto-stuffs state into requests.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container">
+        <h2 class="text-center mb-lg">htmx Integration</h2>
+        <p class="text-center text-muted mb-lg" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+          domx includes an htmx extension for seamless hypermedia integration.
+          State is automatically collected and sent with requests.
+        </p>
+        <div class="code-example" style="max-width: 700px; margin: 0 auto;">
+          <pre><code>&lt;body hx-ext="domx" dx-manifest="manifest" dx-cache="true"&gt;
+  &lt;input id="search" type="text"&gt;
+  &lt;button hx-post="/api/search" hx-trigger="click"&gt;
+    Search
+  &lt;/button&gt;
+&lt;/body&gt;
+
+&lt;!-- State auto-collected and sent with every htmx request --&gt;
+&lt;!-- Cached to localStorage for page refresh recovery --&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container text-center">
+        <h2 class="mb-md">Get Started</h2>
+        <div class="code-example" style="max-width: 500px; margin: 0 auto;">
+          <div class="code-example__label">npm</div>
+          <pre><code>npm install domx</code></pre>
+        </div>
+        <p class="mt-md text-muted">Or via CDN:</p>
+        <div class="code-example" style="max-width: 700px; margin: 1rem auto 0;">
+          <pre><code>&lt;script src="https://unpkg.com/domx"&gt;&lt;/script&gt;</code></pre>
+        </div>
+        <div class="btn-group mt-lg">
+          <a href="/docs.html" class="btn btn--primary">Read the Docs</a>
+          <a href="https://github.com/adamzwasserman/domx" class="btn">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--warm">
+      <div class="container">
+        <h2 class="text-center mb-lg">Related Projects</h2>
+        <div class="related-grid">
+          <a href="https://dataos.software" class="related-card">
+            <h3>DATAOS</h3>
+            <p>The philosophy behind domx. DOM as the single source of truth.</p>
+          </a>
+          <a href="https://stateless.software" class="related-card">
+            <h3>stateless</h3>
+            <p>React implementation of DATAOS principles.</p>
+          </a>
+          <a href="https://genx.software" class="related-card">
+            <h3>genX</h3>
+            <p>Declarative HTML formatting library. Uses domx internally.</p>
+          </a>
+          <a href="https://multicardz.software" class="related-card">
+            <h3>multicardz</h3>
+            <p>DATAOS in production. 1M+ cards, perfect Lighthouse score.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__text">domx is open source. MIT License.</p>
+      <p class="footer__text" style="margin-top: 0.5rem;">Part of the <a href="https://dataos.software" target="_blank" rel="noopener">DATAOS</a> ecosystem</p>
+    </div>
+  </footer>
+</body>
+</html>
