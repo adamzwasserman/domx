@@ -7,16 +7,20 @@
   "types": "dist/domx.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/domx.d.ts",
       "import": "./dist/domx.esm.js",
-      "require": "./dist/domx.js",
-      "types": "./dist/domx.d.ts"
+      "require": "./dist/domx.js"
     },
     "./htmx": {
+      "types": "./dist/domx-htmx.d.ts",
       "import": "./dist/domx-htmx.esm.js",
       "require": "./dist/domx-htmx.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "node scripts/build.js",
     "test": "vitest",
@@ -26,17 +30,25 @@
     "prepublishOnly": "npm run build && npm test",
     "size": "size-limit"
   },
-  "keywords": ["dom", "state", "dataos", "htmx", "observer", "mutation", "hypermedia"],
+  "keywords": [
+    "dom",
+    "state",
+    "dataos",
+    "htmx",
+    "observer",
+    "mutation",
+    "hypermedia"
+  ],
   "author": "Adam Wasserman <adamzwasserman>",
   "license": "MIT",
   "homepage": "https://domx.software",
   "repository": "https://github.com/adamzwasserman/domx",
   "devDependencies": {
-    "esbuild": "^0.24.0",
-    "jsdom": "^23.0.0",
-    "vitest": "^1.0.0",
     "@size-limit/preset-small-lib": "^11.0.0",
-    "size-limit": "^11.0.0"
+    "esbuild": "^0.24.2",
+    "jsdom": "^23.0.0",
+    "size-limit": "^11.0.0",
+    "vitest": "^1.0.0"
   },
   "size-limit": [
     {
