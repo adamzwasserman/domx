@@ -1,5 +1,5 @@
 {
-  "name": "domx",
+  "name": "domx-dataos",
   "version": "0.1.0",
   "description": "DOM state observer for DATAOS — collect, apply, observe, and persist DOM state",
   "main": "dist/domx.js",
