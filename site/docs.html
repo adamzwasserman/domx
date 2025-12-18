@@ -6,7 +6,58 @@
   <title>Documentation - domx</title>
   <meta name="description" content="domx documentation. Learn how to use collect, apply, observe, and more.">
   <link rel="canonical" href="https://domx.software/docs.html">
-  <link rel="stylesheet" href="style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <!-- Preload fonts -->
+  <link rel="preload" href="/fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- Critical CSS (inlined for performance) -->
+  <style>
+    /* Font faces with metric overrides */
+    @font-face{font-family:'Inter';src:url('/fonts/Inter-Variable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;ascent-override:90%;descent-override:22%;line-gap-override:0%}
+    @font-face{font-family:'Inter Fallback';src:local('BlinkMacSystemFont'),local('Segoe UI'),local('system-ui');ascent-override:90%;descent-override:22%;line-gap-override:0%}
+    @font-face{font-family:'JetBrains Mono';src:url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;ascent-override:98%;descent-override:23%;line-gap-override:0%}
+    @font-face{font-family:'JetBrains Mono Fallback';src:local('SF Mono'),local('Menlo'),local('Consolas'),local('monospace');ascent-override:98%;descent-override:23%;line-gap-override:0%}
+    :root{--color-bg:#fafafa;--color-bg-warm:#f5f3f0;--color-white:#ffffff;--color-text:#333333;--color-text-light:#666666;--color-text-muted:#999999;--color-border:#e8e4df;--color-accent:#dc2626;--color-accent-soft:#ef4444;--font-sans:'Inter','Inter Fallback',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'JetBrains Mono','JetBrains Mono Fallback','SF Mono','Fira Code',monospace;--spacing-xs:0.5rem;--spacing-sm:1rem;--spacing-md:2rem;--spacing-lg:4rem;--spacing-xl:6rem;--max-width:1200px;--transition:0.2s ease}
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:var(--font-sans);line-height:1.7;color:var(--color-text);background:var(--color-bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+    h1,h2,h3,h4,h5,h6{font-weight:400;line-height:1.3;letter-spacing:-0.02em}
+    h2{font-size:1.75rem;margin-bottom:var(--spacing-md)}
+    h3{font-size:1.25rem;margin-bottom:var(--spacing-sm)}
+    p{margin-bottom:var(--spacing-sm)}
+    a{color:var(--color-text);text-decoration:none;border-bottom:1px solid var(--color-border);transition:border-color var(--transition)}
+    .container{max-width:var(--max-width);margin:0 auto;padding:0 var(--spacing-md)}
+    .header{padding:var(--spacing-sm) 0;position:sticky;top:0;background:var(--color-bg);z-index:100;border-bottom:1px solid var(--color-border)}
+    .header__inner{display:flex;justify-content:space-between;align-items:center}
+    .logo{font-size:1.5rem;font-weight:400;letter-spacing:-0.03em;border:none}
+    .logo .x{color:var(--color-accent)}
+    .nav{display:flex;gap:var(--spacing-md)}
+    .nav a{font-size:0.9rem;color:var(--color-text-light);border:none;padding:var(--spacing-xs) 0;position:relative}
+    .nav a::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--color-text);transition:width var(--transition)}
+    .nav a:hover::after,.nav a.active::after{width:100%}
+    .nav a:hover,.nav a.active{color:var(--color-text)}
+    .docs{display:grid;grid-template-columns:220px 1fr;gap:var(--spacing-lg);min-height:calc(100vh - 80px)}
+    .docs__nav{padding:var(--spacing-md) 0;position:sticky;top:80px;height:fit-content}
+    .docs__nav-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-muted);margin-bottom:var(--spacing-sm)}
+    .docs__nav-list{list-style:none}
+    .docs__nav-list a{display:block;padding:var(--spacing-xs) 0;font-size:0.9rem;color:var(--color-text-light);border:none}
+    .docs__nav-list a:hover,.docs__nav-list a.active{color:var(--color-text)}
+    .docs__content{padding:var(--spacing-md) 0;max-width:800px}
+    pre,code{font-family:var(--font-mono);font-size:0.875rem}
+    code{background:var(--color-bg-warm);padding:0.125em 0.375em;border-radius:2px}
+    pre{background:var(--color-text);color:var(--color-bg);padding:var(--spacing-md);overflow-x:auto;line-height:1.5}
+    pre code{background:none;padding:0;color:inherit}
+    .code-example{margin:var(--spacing-md) 0}
+    @media(max-width:768px){:root{--spacing-lg:3rem;--spacing-xl:4rem}.nav{gap:var(--spacing-sm)}.docs{grid-template-columns:1fr}.docs__nav{position:static;border-bottom:1px solid var(--color-border);padding-bottom:var(--spacing-md)}}
+  </style>
+
+  <!-- Non-blocking CSS -->
+  <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="style.css"></noscript>
 </head>
 <body>
   <header class="header">
