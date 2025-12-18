@@ -1,0 +1,63 @@
+#!/bin/bash
+# domx.software Pre-commit Hook
+# Purges Cloudflare cache on main branch commits
+
+set -e
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+SITE_DOMAIN="domx.software"
+SITE_DIR="site/"
+
+if [ "$BRANCH" = "main" ] && [ -n "$CF_ZONE_ID_DOMX" ] && [ -n "$CF_API_TOKEN" ]; then
+    echo "🌐 Cloudflare Cache Purge for ${SITE_DOMAIN}"
+    echo "============================================="
+
+    # Get changed files
+    CHANGED_FILES=$(git diff --cached --name-only)
+
+    URLS_TO_PURGE=()
+
+    for file in $CHANGED_FILES; do
+        case "$file" in
+            site/index.html)
+                URLS_TO_PURGE+=("https://${SITE_DOMAIN}/")
+                ;;
+            site/*.html)
+                # Convert file path to URL
+                URL_PATH=$(echo "$file" | sed "s|^${SITE_DIR}||" | sed 's|\.html$||')
+                if [ "$URL_PATH" != "index" ]; then
+                    URLS_TO_PURGE+=("https://${SITE_DOMAIN}/${URL_PATH}")
+                fi
+                ;;
+            site/*.css|site/*.js)
+                URL_PATH=$(echo "$file" | sed "s|^${SITE_DIR}||")
+                URLS_TO_PURGE+=("https://${SITE_DOMAIN}/${URL_PATH}")
+                ;;
+        esac
+    done
+
+    # Remove duplicates
+    URLS_TO_PURGE=($(printf "%s\n" "${URLS_TO_PURGE[@]}" | sort -u))
+
+    if [ ${#URLS_TO_PURGE[@]} -gt 0 ]; then
+        echo "   Purging ${#URLS_TO_PURGE[@]} URLs..."
+
+        URLS_JSON=$(printf '%s\n' "${URLS_TO_PURGE[@]}" | jq -R . | jq -s .)
+
+        RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID_DOMX}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{\"files\": $URLS_JSON}")
+
+        if echo "$RESPONSE" | grep -q '"success":true'; then
+            echo "   ✅ Cache purged successfully"
+        else
+            echo "   ⚠️  Cache purge may have failed (non-blocking)"
+        fi
+    else
+        echo "   No cacheable files changed, skipping"
+    fi
+    echo "============================================="
+fi
+
+exit 0
