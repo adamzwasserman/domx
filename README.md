@@ -283,7 +283,7 @@ Both implement DATAOS principles. Use stateless for React apps, domx for vanilla
 - **[stateless](https://stateless.software)** - React implementation of DATAOS
 - **[genX](https://genx.software)** - Declarative HTML formatting library (uses domx)
 - **[htmx](https://htmx.org)** - High power tools for HTML
-- **[multicardz](https://multicardz.software)** - DATAOS in production
+- **[multicardz](https://www.multicardz.com)** - DATAOS in production
 
 ## License
 
