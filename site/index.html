@@ -74,7 +74,21 @@
     .stat{min-width:120px}
     .stat__value{font-size:2.5rem;font-weight:300;line-height:1;margin-bottom:var(--spacing-xs)}
     .stat__label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-muted)}
-    @media(max-width:768px){:root{--spacing-lg:3rem;--spacing-xl:4rem}.nav{gap:var(--spacing-sm)}}
+    h2{font-size:1.75rem;margin-bottom:var(--spacing-md)}
+    h3{font-size:1.25rem;margin-bottom:var(--spacing-sm)}
+    pre,code{font-family:var(--font-mono);font-size:0.875rem}
+    code{background:var(--color-bg-warm);padding:0.125em 0.375em;border-radius:2px}
+    pre{background:var(--color-text);color:var(--color-bg);padding:var(--spacing-md);overflow-x:auto;line-height:1.5}
+    pre code{background:none;padding:0;color:inherit}
+    .text-muted{color:var(--color-text-muted)}
+    .text-center{text-align:center}
+    .mb-lg{margin-bottom:var(--spacing-lg)}
+    .showcase{display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-lg);align-items:start}
+    .showcase__content{padding:var(--spacing-md) 0}
+    .showcase__visual{background:var(--color-white);border:1px solid var(--color-border);padding:var(--spacing-md)}
+    .code-example{margin:var(--spacing-md) 0}
+    .section--white{background:var(--color-white)}
+    @media(max-width:768px){:root{--spacing-lg:3rem;--spacing-xl:4rem}.nav{gap:var(--spacing-sm)}.showcase{grid-template-columns:1fr}}
   </style>
 
   <!-- Non-blocking CSS -->
