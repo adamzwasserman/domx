@@ -6,7 +6,7 @@
   src: url('/fonts/Inter-Variable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
   ascent-override: 90%;
   descent-override: 22%;
   line-gap-override: 0%;
@@ -27,7 +27,7 @@
   src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
   ascent-override: 98%;
   descent-override: 23%;
   line-gap-override: 0%;
