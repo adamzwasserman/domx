@@ -112,6 +112,26 @@ describe('domx', () => {
       const state = collect(manifest);
       expect(state.tags).toEqual(['A', 'B', 'C']);
     });
+
+    it('scopes selectors to optional root element', () => {
+      document.body.innerHTML = `
+        <section id="left"><span class="tag">L1</span><span class="tag">L2</span></section>
+        <section id="right"><span class="tag">R1</span></section>
+      `;
+
+      const manifest = { tags: { selector: '.tag', read: 'text' } };
+
+      // Default: document root, sees all five tags
+      expect(collect(manifest).tags).toEqual(['L1', 'L2', 'R1']);
+
+      // Scoped to #left, sees only its two tags
+      const left = document.getElementById('left');
+      expect(collect(manifest, left).tags).toEqual(['L1', 'L2']);
+
+      // Scoped to #right, sees only its one tag (single value, not array)
+      const right = document.getElementById('right');
+      expect(collect(manifest, right).tags).toBe('R1');
+    });
   });
 
   // ==========================================================================
@@ -204,6 +224,22 @@ describe('domx', () => {
       // Should not throw
       apply(manifest, { unknownKey: 'ignored', searchQuery: 'updated' });
       expect(document.querySelector('#search').value).toBe('updated');
+    });
+
+    it('scopes writes to optional root element', () => {
+      document.body.innerHTML = `
+        <section id="left"><input class="q" value="old"></section>
+        <section id="right"><input class="q" value="old"></section>
+      `;
+
+      const manifest = { q: { selector: '.q', write: 'value' } };
+
+      // Scoped to #left only — #right input stays untouched
+      const left = document.getElementById('left');
+      apply(manifest, { q: 'new' }, left);
+
+      expect(left.querySelector('.q').value).toBe('new');
+      expect(document.getElementById('right').querySelector('.q').value).toBe('old');
     });
 
     it('only processes entries with write key', () => {

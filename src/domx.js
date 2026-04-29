@@ -75,9 +75,12 @@ function parseWrite(write) {
 /**
  * Collect state from DOM based on manifest
  * @param {Object} manifest - Manifest mapping labels to {selector, read}
+ * @param {ParentNode} [root=document] - Element from which selectors run.
+ *   Defaults to `document` for backward compatibility. Pass a section root
+ *   to scope selectors instead of forcing global drilling.
  * @returns {Object} State object with label keys
  */
-export function collect(manifest) {
+export function collect(manifest, root = document) {
   const state = {};
 
   for (const [label, config] of Object.entries(manifest)) {
@@ -85,7 +88,7 @@ export function collect(manifest) {
     if (!selector || !read) continue;
 
     const extractor = parseRead(read);
-    const elements = document.querySelectorAll(selector);
+    const elements = root.querySelectorAll(selector);
 
     if (elements.length === 0) {
       state[label] = null;
@@ -112,15 +115,18 @@ export function collect(manifest) {
  * Apply state to DOM based on manifest
  * @param {Object} manifest - Manifest mapping labels to {selector, write}
  * @param {Object} state - State object with label keys
+ * @param {ParentNode} [root=document] - Element from which selectors run.
+ *   Defaults to `document` for backward compatibility. Pass a section root
+ *   to scope writes instead of forcing global drilling.
  */
-export function apply(manifest, state) {
+export function apply(manifest, state, root = document) {
   for (const [label, config] of Object.entries(manifest)) {
     if (!(label in state)) continue;
     if (!config.write) continue; // Skip read-only entries
 
     const { selector, write } = config;
     const writer = parseWrite(write);
-    const elements = document.querySelectorAll(selector);
+    const elements = root.querySelectorAll(selector);
 
     const value = state[label];
 
