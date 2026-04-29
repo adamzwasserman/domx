@@ -1,6 +1,6 @@
 {
   "name": "domx-dataos",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DOM state observer for DATAOS — collect, apply, observe, and persist DOM state",
   "main": "dist/domx.js",
   "module": "dist/domx.esm.js",
