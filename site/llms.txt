@@ -1,0 +1,35 @@
+# domx
+
+> DOM State Observer for DATAOS by Adam Zachary Wasserman
+
+## What this is
+
+domx is a tiny (<1KB) JavaScript library for treating the DOM as the single source of truth. It provides three operations: collect state from DOM elements, apply state back to the DOM, and observe DOM changes via MutationObserver. Zero dependencies. Works with HTMX, vanilla JS, or any framework.
+
+## Why it exists
+
+State management in web apps is complex because frameworks maintain a shadow copy of state that must be synced with the DOM. domx eliminates this by reading and writing state directly from/to DOM attributes and content. No store, no reducers, no subscriptions. The DOM is the store.
+
+## Key features
+
+- collect(): gather state from DOM elements into a plain object
+- apply(): write a plain object back into DOM elements
+- observe(): watch for DOM mutations and react to changes
+- Under 1KB minified and gzipped
+- Zero dependencies
+- Part of the DATAOS ecosystem (DOM As The Authority On State)
+
+## Pages
+
+- [Home](https://domx.software/): API overview and quick start
+- [Docs](https://domx.software/docs.html): Full API documentation
+
+## Related projects
+
+- [DATAOS](https://dataos.software): The architectural philosophy domx implements
+- [genX](https://genx.software): Declarative HTML attribute behaviors, complementary to domx
+- [stateless](https://stateless.software): React hook built on the same DOM-as-state principle
+
+## Author
+
+Adam Zachary Wasserman — [adamzacharywasserman.com](https://adamzacharywasserman.com)
