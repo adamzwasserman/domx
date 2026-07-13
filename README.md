@@ -287,4 +287,4 @@ Both implement DATAOS principles. Use stateless for React apps, domx for vanilla
 
 ## License
 
-MIT © Adam Zachary Wasserman
+MIT © [Adam Zachary Wasserman](https://adamzacharywasserman.com)
