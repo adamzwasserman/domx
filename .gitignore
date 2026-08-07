@@ -1,5 +1,8 @@
-# Claude Code local configuration
+# Claude Code / agent integration (created by bd init — local only)
 .claude/
+CLAUDE.md
+AGENTS.md
+.agents/
 
 # Beads task tracking (local only)
 .beads/
@@ -40,3 +43,9 @@ coverage/
 
 # Size limit
 .size-limit.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
