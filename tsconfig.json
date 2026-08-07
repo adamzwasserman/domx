@@ -1,0 +1,13 @@
+{
+  "//": "Type-check only. domx ships as plain JS; this exists so tests/types/usage.ts can catch drift between src/*.js and the hand-maintained src/*.d.ts.",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": []
+  },
+  "include": ["tests/types/**/*.ts", "src/**/*.d.ts"]
+}

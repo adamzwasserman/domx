@@ -2,7 +2,7 @@
 
 DOM state observer for [DATAOS](https://dataos.software) — collect, apply, observe, and persist DOM state.
 
-**< 1KB** minified + gzipped. Zero dependencies.
+**~2.2KB** minified + gzipped (1.9KB brotli). Zero dependencies.
 
 ## What is domx?
 
@@ -106,13 +106,15 @@ domx.apply(manifest, { username: "alice" });
 
 ### `observe(manifest, callback)`
 
-Watches DOM for changes and calls callback with full state. Auto-detects watch mechanism from `read` type. Returns unsubscribe function.
+Watches DOM for changes and calls callback with full state. Auto-detects watch mechanism from `read` type, and narrows what it wakes for to the attributes and text the manifest actually reads — see [Keeping observe() quiet](#keeping-observe-quiet). Returns unsubscribe function.
 
 ```js
 const unsubscribe = domx.observe(manifest, (state) => {
   // Called on any relevant DOM change
 });
 ```
+
+⚠️ Before observing state your server re-renders, read [The wipe race](#the-wipe-race-read-this-before-you-observe-server-owned-state).
 
 ### `on(callback)`
 
@@ -157,6 +159,105 @@ Clears the cached request.
 domx.clearCache();
 ```
 
+## The wipe race (read this before you observe server-owned state)
+
+domx's core loop is observe → `send()` → server returns HTML → swap it in. That loop has one failure mode, and it is the sharpest edge in the library:
+
+**If the HTML the server sends back does not preserve exactly what you mutated, the swap wipes your own mutation.**
+
+multicardz hit this in production. Dragging a tag onto a card added a chip to the card's DOM; the chip was observed; the observation fired a request; the server rendered the card from its own stored state, which did not have the tag yet; the swap replaced the card and the chip vanished. The symptom the user sees is a flicker — the thing you just did appears and then disappears.
+
+The race is not a bug in the swap or in the observer. It is what happens when one piece of DOM has two owners.
+
+### The rule
+
+**Only observe state the server round-trips faithfully.** A manifest entry is a promise that the server will hand this value back unchanged. In multicardz the manifest is literally the inputs to the render payload — filters, sort direction, search text — all state the server reads and returns.
+
+State the server *owns* — the rendered result, not the query that produced it — is handled the other way round: persist it, then let the server refresh it.
+
+```js
+// The query. The server round-trips it faithfully, so observing it is safe.
+const manifest = {
+  searchQuery: { selector: '#search', read: 'value' },
+  sortDir: { selector: '[data-sort]', read: 'attr:data-sort-dir' },
+
+  // The result. The server owns and re-renders this, so observing its own
+  // mutations would make the swap re-trigger the request that caused it.
+  chips: { selector: '#chips', read: 'attr:data-chips', serverOwned: true }
+};
+```
+
+`serverOwned: true` means: **this element's own mutations do not fire `observe()`.** User input to it still does — typing in a `serverOwned` input fires normally. It is only the element mutating under you, which is what a swap looks like, that stays silent.
+
+`collect()` still reads `serverOwned` entries. The flag changes what *wakes* the observer, never what counts as state.
+
+### The escape hatch: persist, then refresh
+
+When the user acts on server-owned state, do not let the observer carry it. Send the change explicitly, and let the response be the refresh:
+
+```js
+// Explicit handler — not an observation
+async function addTag(cardId, tag) {
+  const response = await fetch(`/cards/${cardId}/tags`, {
+    method: 'POST',
+    body: JSON.stringify({ tag })
+  });
+  // The server now has the tag, so what it renders includes it.
+  document.querySelector(`#card-${cardId}`).outerHTML = await response.text();
+}
+```
+
+Persist first, refresh second. The swap can no longer wipe the mutation, because by the time the server renders, the mutation is part of what it is rendering.
+
+## Swaps destroy what is bound to them
+
+Every OOB swap replaces nodes, and anything bound to a replaced node goes with it. An `observe()` whose manifest selectors resolve to swapped-away elements does not error — it silently stops working.
+
+domx's shared MutationObserver is bound to `document.body`, which survives swaps, and manifest selectors are re-resolved on every `collect()`. So `observe()` keeps working across swaps **as long as the selectors still match something**. What breaks is narrower and worth naming:
+
+- **A manifest scoped to a swapped root.** `collect(manifest, sectionEl)` holds a reference to `sectionEl`. Once that element is swapped away, the reference points at a detached node and every read returns `null`. Re-scope after the swap, or scope to an ancestor the swap does not replace.
+- **The htmx extension's `dx:change` listeners.** `domx-htmx.js` sets up an observer per *processed node* that resolves a manifest (on `htmx:beforeProcessNode`), and fires `dx:change` on that node. When the node is swapped, `htmx:beforeCleanupElement` tears its observer down, and any `hx-trigger="dx:change"` bound to it stops firing until htmx processes the replacement. Bind `hx-trigger="dx:change"` to an element outside the swap target, not inside it.
+
+The general fix is the one multicardz uses: **bind to a stable ancestor and let the subtree churn beneath you**, rather than binding to the nodes that get replaced.
+
+```html
+<!-- Stable: body is never swapped, so the manifest binding survives -->
+<body hx-ext="domx" dx-manifest="manifest">
+  <div id="results">
+    <!-- swapped freely; observe() re-resolves selectors on every collect -->
+  </div>
+</body>
+```
+
+## Keeping observe() quiet
+
+`observe()` narrows what it wakes for, from the manifest itself. You do not configure this; it is derived:
+
+- **Attributes** — only the attributes some entry actually reads. A manifest reading `attr:data-sort-dir` does not wake on `aria-busy`.
+- **`class`** — ignored, always, unless an entry reads it outright (`read: 'attr:class'`). Class flips are hover, selection, drag highlight, animation — cosmetic churn that costs a server roundtrip and whose response swap can wipe the class that caused it.
+- **Text** — `characterData` is only watched when some entry reads `text`.
+- **Custom `read` functions** — a function can read anything, so domx cannot narrow for it and watches broadly. Everything except `class` still applies.
+
+This narrowing is applied twice, at two different costs. The single shared `MutationObserver` is configured with the **union** of every live subscriber's needs, so an attribute nobody reads is never delivered to domx at all — the cheapest possible filter, because the browser does it. Each `observe()` then applies its own manifest's rules to what does arrive, so one subscriber's broad manifest never leaks mutations into another's callback.
+
+The union is recomputed on every subscribe and unsubscribe, and the observer disconnects entirely once the last subscriber leaves.
+
+`on()` is the exception. It is documented as a *raw* mutation subscription, so a live `on()` subscriber widens the shared observer to every attribute for as long as it is subscribed — raw has to mean raw. `observe()` callbacks are unaffected: they keep filtering precisely, they just have more to filter.
+
+### `dx-ignore` — transient nodes opt out
+
+HTMX and DATAOS apps constantly insert ephemeral feedback: drag ghosts, insertion markers, spinners, toasts. They carry no state, they should not cost a roundtrip, and the swap that answers one destroys the feedback mid-gesture.
+
+Mark them and `observe()` skips them:
+
+```html
+<div id="drop-zone">
+  <div class="drag-ghost" dx-ignore>Dragging…</div>
+</div>
+```
+
+The opt-out covers the marked node, its subtree, and its insertion and removal. An unmarked node inserted into the same container still fires normally — `dx-ignore` is opt-in.
+
 ## Manifest Format
 
 ### Read/Write Shortcuts
@@ -169,6 +270,18 @@ domx.clearCache();
 | `"attr:name"` | `el.getAttribute('name')` | `el.setAttribute('name', x)` |
 | `"data:name"` | `el.dataset.name` | `el.dataset.name = x` |
 | Function | Custom extractor | Custom writer |
+
+The vocabulary is exact and case-sensitive: `"Value"`, `"valu"`, `" value"` and `"attr"` (no colon) are all rejected with `Unknown read shortcut`, rather than being guessed at.
+
+### Entry Keys
+
+| Key | Required | Description |
+|-----|----------|-------------|
+| `selector` | yes | CSS selector the entry resolves to |
+| `read` | yes | How to extract the value |
+| `write` | no | How to write the value; entries without it are read-only |
+| `watch` | no | Explicit event name, overriding the one inferred from `read` |
+| `serverOwned` | no | `true` = the server owns and re-renders this. `observe()` will not wake on the element's own mutations, only on user input to it. See [The wipe race](#the-wipe-race-read-this-before-you-observe-server-owned-state). |
 
 ### Custom Functions
 
@@ -238,6 +351,7 @@ const manifest = {
 |-----------|-------------|
 | `dx-manifest` | Manifest object name or inline JSON |
 | `dx-cache` | Enable localStorage caching ("true"/"false") |
+| `dx-ignore` | Mark a transient node (drag ghost, insertion marker, spinner) so `observe()` skips it, its subtree, and its insertion/removal |
 
 ⚠️ **Security Warning**: `dx-manifest` attributes should be server-rendered, not user-settable, to prevent potential code injection through JSON parsing or window property access.
 
@@ -272,10 +386,10 @@ Both implement DATAOS principles. Use stateless for React apps, domx for vanilla
 
 ## Performance
 
-- **Single MutationObserver**: Regardless of manifest size
+- **Single MutationObserver**: Regardless of manifest size, narrowed to the union of what live subscribers actually read
 - **Batched callbacks**: Uses `requestAnimationFrame` to batch rapid changes
 - **Passive event listeners**: For input/change events
-- **< 1KB**: Minified + gzipped
+- **~2.2KB**: Minified + gzipped; 1.9KB brotli, which is what the size budget gates on
 
 ## Related Projects
 

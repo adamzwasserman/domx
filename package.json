@@ -23,11 +23,12 @@
   ],
   "scripts": {
     "build": "node scripts/build.js",
-    "test": "vitest",
+    "test": "vitest run && npm run typecheck",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src/",
-    "prepublishOnly": "npm run build && npm test",
+    "prepublishOnly": "npm run build && npm run lint && npm test",
     "size": "size-limit"
   },
   "keywords": [
@@ -44,16 +45,19 @@
   "homepage": "https://domx.software",
   "repository": "https://github.com/adamzwasserman/domx",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@size-limit/preset-small-lib": "^11.0.0",
     "esbuild": "^0.24.2",
+    "eslint": "^10.8.0",
     "jsdom": "^23.0.0",
     "size-limit": "^11.0.0",
+    "typescript": "^7.0.2",
     "vitest": "^1.0.0"
   },
   "size-limit": [
     {
       "path": "dist/domx.js",
-      "limit": "1 KB"
+      "limit": "2 KB"
     }
   ]
 }

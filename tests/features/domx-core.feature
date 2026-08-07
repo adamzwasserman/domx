@@ -177,6 +177,280 @@ Feature: domx Core - DOM State Observer
     Then callback should be called with state containing searchQuery equal to "typed"
 
   # ============================================================================
+  # observe() - Mutation relevance (which mutations are worth waking for)
+  # ============================================================================
+
+  Scenario: observe() ignores class-only mutations when no entry reads class
+    Given the DOM contains '<button data-sort-dir="asc">Sort</button>'
+    And a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    And I call observe(manifest, callback)
+    When the class of "[data-sort-dir]" changes to "highlighted"
+    Then callback should not be called
+
+  Scenario: observe() fires on class mutations when an entry reads class outright
+    Given the DOM contains '<button class="idle">Sort</button>'
+    And a manifest with mode using selector "button" and read "attr:class"
+    And I call observe(manifest, callback)
+    When the class of "button" changes to "active"
+    Then callback should be called with state containing mode equal to "active"
+
+  Scenario: observe() ignores attributes outside the manifest's read set
+    Given the DOM contains '<button data-sort-dir="asc">Sort</button>'
+    And a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    And I call observe(manifest, callback)
+    When the attribute "aria-busy" of "[data-sort-dir]" is set to "true"
+    Then callback should not be called
+
+  Scenario: observe() still fires on the exact attribute the manifest reads
+    Given the DOM contains '<button data-sort-dir="asc">Sort</button>'
+    And a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    And I call observe(manifest, callback)
+    When the attribute "data-sort-dir" of "[data-sort-dir]" is set to "desc"
+    Then callback should be called with state containing sortDir equal to "desc"
+
+  Scenario: observe() maps a "data:name" read to its kebab-case attribute
+    Given the DOM contains '<div data-sort-dir="asc">Items</div>'
+    And a manifest with sortDir using selector "[data-sort-dir]" and read "data:sortDir"
+    And I call observe(manifest, callback)
+    When the attribute "data-sort-dir" of "[data-sort-dir]" is set to "desc"
+    Then callback should be called with state containing sortDir equal to "desc"
+
+  Scenario: observe() ignores character data edits when no entry reads text
+    Given the DOM contains '<div id="box" data-count="1">original</div>'
+    And a manifest with count using selector "#box" and read "attr:data-count"
+    And I call observe(manifest, callback)
+    When the text node inside "#box" is edited to "changed"
+    Then callback should not be called
+
+  Scenario: observe() fires on character data edits when an entry reads text
+    Given the DOM contains '<div id="box">original</div>'
+    And a manifest with label using selector "#box" and read "text"
+    And I call observe(manifest, callback)
+    When the text node inside "#box" is edited to "changed"
+    Then callback should be called with state containing label equal to "changed"
+
+  # ============================================================================
+  # observe() - manifest validation
+  # ============================================================================
+
+  Scenario: observe() rejects an invalid read shortcut at the call site
+    Given the DOM contains '<div id="el"></div>'
+    And a manifest with x using selector "#el" and read "attr:"
+    When I call observe(manifest, callback)
+    Then an error "Unknown read shortcut: attr:" should be raised synchronously
+
+  Scenario: observe() skips entries missing selector or read
+    Given the DOM contains '<div id="el"></div>'
+    And a manifest with incomplete using selector "#el" and no read
+    When I call observe(manifest, callback)
+    Then no error should occur
+    And the result should be an unsubscribe function
+
+  # ============================================================================
+  # Shared observer - union of subscriber needs
+  # ============================================================================
+
+  Scenario: the observer is narrowed to the attributes one manifest reads
+    Given a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    When I call observe(manifest, callback)
+    Then the shared observer should be given attributeFilter ["data-sort-dir"]
+
+  Scenario: the observer unions the attributes of two concurrent subscribers
+    Given a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    And a second manifest with theme using selector "[data-theme]" and read "data:theme"
+    When I call observe() on both manifests
+    Then the shared observer should be given attributeFilter ["data-sort-dir", "data-theme"]
+
+  Scenario: the observer narrows again when one of two subscribers unsubscribes
+    Given two active observe() subscriptions reading different attributes
+    When I unsubscribe the first
+    Then the shared observer should be given attributeFilter with only the second attribute
+
+  Scenario: a raw on() subscriber widens the observer to every attribute
+    Given an active observe() subscription reading only "attr:data-sort-dir"
+    When I call on(callback)
+    Then the shared observer should be given attributes true
+    And the shared observer should be given no attributeFilter
+
+  Scenario: the observer narrows again once the on() subscriber leaves
+    Given an active observe() subscription reading only "attr:data-sort-dir"
+    And an active on() subscription
+    When I unsubscribe the on() subscription
+    Then the shared observer should be given attributeFilter ["data-sort-dir"]
+
+  Scenario: a custom read function widens the observer to every attribute
+    Given a manifest with combined using selector "#thing" and read a custom function
+    When I call observe(manifest, callback)
+    Then the shared observer should be given attributes true
+    And the shared observer should be given no attributeFilter
+
+  Scenario: a value-only manifest leaves attributes off entirely
+    Given a manifest with searchQuery using selector "#search" and read "value"
+    When I call observe(manifest, callback)
+    Then the shared observer should be given no attributes
+    And the shared observer should be given no attributeFilter
+
+  Scenario: characterData is requested only when a manifest reads text
+    Given a manifest with sortDir using selector "[data-sort-dir]" and read "attr:data-sort-dir"
+    When I call observe(manifest, callback)
+    Then the shared observer should be given characterData false
+    When I also observe a manifest with label using read "text"
+    Then the shared observer should be given characterData true
+
+  Scenario: the observer disconnects when the last subscriber leaves
+    Given a single active observe() subscription
+    When I unsubscribe it
+    Then the shared observer should be disconnected
+
+  Scenario: recomputing the union does not double-register the target
+    Given an active on() subscription
+    And the DOM contains '<button data-sort-dir="asc">Sort</button>'
+    When I call observe() on another manifest, recomputing the union
+    And the attribute "data-sort-dir" of "button" is set to "desc"
+    Then the on() callback should receive exactly one record for "data-sort-dir"
+
+  Scenario: an attribute no manifest reads still reaches a raw on() subscriber
+    Given an active observe() subscription reading only "attr:data-sort-dir"
+    And an active on() subscription
+    And the DOM contains '<button data-sort-dir="asc">Sort</button>'
+    When the attribute "aria-busy" of "button" is set to "true"
+    Then the on() callback should receive a record for "aria-busy"
+
+  # ============================================================================
+  # observe() - dx-ignore (transient nodes carry their own opt-out)
+  # ============================================================================
+
+  Scenario: observe() ignores insertion of a [dx-ignore] node
+    Given the DOM contains '<div id="list" data-count="0"></div>'
+    And a manifest with count using selector "#list" and read "attr:data-count"
+    And I call observe(manifest, callback)
+    When a node with attribute dx-ignore is appended to "#list"
+    Then callback should not be called
+
+  Scenario: observe() ignores removal of a [dx-ignore] node
+    Given the DOM contains '<div id="list" data-count="0"><span dx-ignore id="ghost"></span></div>'
+    And a manifest with count using selector "#list" and read "attr:data-count"
+    And I call observe(manifest, callback)
+    When "#ghost" is removed from "#list"
+    Then callback should not be called
+
+  Scenario: observe() ignores mutations inside a [dx-ignore] subtree
+    Given the DOM contains '<div id="list" data-count="0"><span dx-ignore id="ghost" data-count="0"></span></div>'
+    And a manifest with count using selector "#list" and read "attr:data-count"
+    And I call observe(manifest, callback)
+    When the attribute "data-count" of "#ghost" is set to "9"
+    Then callback should not be called
+
+  Scenario: observe() still fires on insertion of a node without dx-ignore
+    Given the DOM contains '<div id="list" data-count="0"></div>'
+    And a manifest with count using selector "#list" and read "attr:data-count"
+    And I call observe(manifest, callback)
+    When a node without attribute dx-ignore is appended to "#list"
+    Then callback should be called
+
+  # ============================================================================
+  # observe() - server-owned state (the wipe race)
+  # ============================================================================
+
+  Scenario: observe() does not self-trigger on a serverOwned entry's own mutation
+    Given the DOM contains '<div id="chips" data-chips="a">a</div>'
+    And a manifest with chips using selector "#chips" and read "attr:data-chips" and serverOwned true
+    And I call observe(manifest, callback)
+    When the attribute "data-chips" of "#chips" is set to "a,b"
+    Then callback should not be called
+
+  Scenario: observe() still fires on user input to a serverOwned entry
+    Given the DOM contains '<input id="search" value="initial">'
+    And a manifest with searchQuery using selector "#search" and read "value" and serverOwned true
+    And I call observe(manifest, callback)
+    When the user types "typed" into "#search"
+    Then callback should be called with state containing searchQuery equal to "typed"
+
+  Scenario: collect() still reads serverOwned entries
+    Given the DOM contains '<div id="chips" data-chips="a,b">chips</div>'
+    And a manifest with chips using selector "#chips" and read "attr:data-chips" and serverOwned true
+    When I call collect(manifest)
+    Then the result should have chips equal to "a,b"
+
+  # ============================================================================
+  # Honesty laws - the manifest is the caller's, not ours (honest-test Law 3)
+  # ============================================================================
+
+  Scenario Outline: <function>() does not mutate the manifest
+    Given the DOM contains a search input, a sort button, a text box and a chips div
+    And a manifest reading value, attr, text and a serverOwned entry
+    When I call <function>()
+    Then the manifest should be unchanged
+
+    Examples:
+      | function |
+      | collect  |
+      | apply    |
+      | observe  |
+
+  Scenario: collect() returns the same state twice over an unchanged DOM
+    Given the DOM contains a search input, a sort button, a text box and a chips div
+    And a manifest reading value, attr, text and a serverOwned entry
+    When I call collect(manifest) twice without touching the DOM
+    Then both results should be equal
+
+  # ============================================================================
+  # Read vocabulary - adversarial rejection (honest-test Law 5)
+  # ============================================================================
+
+  Scenario Outline: collect() rejects an edit-distance-1 neighbour of a read shortcut
+    Given the DOM contains '<input id="el" value="hello">'
+    And a manifest with x using selector "#el" and read "<neighbour>"
+    When I call collect(manifest)
+    Then an error "Unknown read shortcut: <neighbour>" should be raised
+
+    Examples:
+      | neighbour |
+      | Value     |
+      | valu      |
+      | vvalue    |
+      | " value"  |
+      | "value "  |
+      | Checked   |
+      | checke    |
+      | Text      |
+      | tex       |
+      | attr      |
+      | atr:x     |
+      | Attr:x    |
+      | attr:     |
+      | data      |
+      | dat:x     |
+      | Data:x    |
+      | data:     |
+
+  Scenario Outline: apply() rejects an edit-distance-1 neighbour of a write shortcut
+    Given the DOM contains '<input id="el" value="hello">'
+    And a manifest with x using selector "#el" and write "<neighbour>"
+    When I call apply(manifest, {x: "v"})
+    Then an error "Unknown write shortcut: <neighbour>" should be raised
+
+    Examples:
+      | neighbour |
+      | Value     |
+      | valu      |
+      | vvalue    |
+      | " value"  |
+      | "value "  |
+      | Checked   |
+      | checke    |
+      | Text      |
+      | tex       |
+      | attr      |
+      | atr:x     |
+      | Attr:x    |
+      | attr:     |
+      | data      |
+      | dat:x     |
+      | Data:x    |
+      | data:     |
+
+  # ============================================================================
   # on() - Low-level mutation subscription
   # ============================================================================
 

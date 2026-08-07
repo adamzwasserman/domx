@@ -78,10 +78,22 @@ async function build() {
     sourcemap: true,
   });
 
+  // Type declarations are hand-maintained in src/ and copied verbatim.
+  // package.json points "types" at these, so a build that omits them ships a
+  // package whose type entry points at nothing.
+  const declarations = ['domx.d.ts', 'domx-htmx.d.ts'];
+  for (const file of declarations) {
+    const from = path.join(__dirname, '..', 'src', file);
+    if (!fs.existsSync(from)) {
+      throw new Error(`Missing type declaration src/${file}`);
+    }
+    fs.copyFileSync(from, path.join(outdir, file));
+  }
+
   console.log('Build complete!');
 
   // Report sizes
-  const files = fs.readdirSync(outdir).filter(f => f.endsWith('.js'));
+  const files = fs.readdirSync(outdir).filter(f => f.endsWith('.js') || f.endsWith('.d.ts'));
   for (const file of files) {
     const stat = fs.statSync(path.join(outdir, file));
     console.log(`  ${file}: ${stat.size} bytes`);

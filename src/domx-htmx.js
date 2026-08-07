@@ -45,7 +45,7 @@ function parseManifest(value) {
   // Try JSON first
   try {
     manifest = JSON.parse(value);
-  } catch (e) {
+  } catch {
     // Try as variable name
     if (typeof window !== 'undefined' && window[value]) {
       manifest = window[value];
@@ -144,7 +144,7 @@ const domxExtension = {
               state,
               ts: Date.now()
             }));
-          } catch (e) {
+          } catch {
             // localStorage unavailable
           }
         }
